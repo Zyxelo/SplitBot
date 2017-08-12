@@ -28,8 +28,8 @@ const SERVER_URL = process.env.SERVER_URL;
  */
 const setPreferencesButton = {
   type: 'web_url',
-  title: 'Set Gift Preferences',
-  url: `${SERVER_URL}/`,
+  title: 'Set Gift Preferences Nao',
+  url: `$SERVER_URL/`,
   webview_height_ratio: 'tall',
   messenger_extensions: true,
 };

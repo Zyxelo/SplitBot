@@ -68,7 +68,7 @@ const sendReadReceipt = (recipientId) => {
 
 // Send the initial message telling the user about the promotion.
 const sendHelloRewardMessage = (recipientId) => {
-  console.log(messages.helloRewardMessage.attachment.payload.buttons);
+  console.log(messages.helloRewardMessage.attachment.payload);
   sendMessage(recipientId, messages.helloRewardMessage); }
 
 // Send a message indicating to a user that their preferences have changed.
