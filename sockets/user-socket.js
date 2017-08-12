@@ -94,7 +94,7 @@ const join = ({
             socket.in(list.id).emit('user:join', viewerUser);
 
             userSocket.emit('init', {
-              ...list,
+              list,
               items,
               users: fbUsers,
               ownerId: listOwner ? listOwner.fbId : user.fbId,
