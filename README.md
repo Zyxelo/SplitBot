@@ -1,12 +1,11 @@
-# Chat Extensions (Tasks)
-This is the folder for Tasks, a bot that demonstrates [Chat Extensions](https://developers.facebook.com/docs/messenger-platform/design-best-practices/guides/chat-extensions) on the Messenger Platform.
+# GUI in the Webview (Victoria Belle)
+This is the folder for Victoria Belle, a bot that demonstrates best practices for [creating GUI in the Messenger Platform's webview](https://developers.facebook.com/docs/messenger-platform/design-best-practices/guides/create-gui).
 
-**[<img src="../docs/assets/ViewMessenger.png" width="200">](https://m.me/MessengerTaskBot)**
+**[<img src="../docs/assets/ViewMessenger.png" width="200">](https://m.me/VictoriaBelleCo)**
 
 ## Everything we used to make this Bot
 
 ### Technologies used
-
 #### ECMAScript 7 (“ES7” / JavaScript)
 ECMAScript™ is the standard behind JavaScript. It has had a number of very useful additions over the past several years, modernizing the syntax and providing new capabilities.
 
@@ -23,7 +22,7 @@ Webpack is the de facto module bundler for JavaScript development. It is highly 
 *[Learn More](https://webpack.github.io/)*
 
 #### Node.js
-Node enables us to use JavaScript outside of a browser and directly on our machines to perform the logic necessary to determine what messages to send to the end user and when.
+Node enables us to use c outside of a browser and directly on our machines to perform the logic necessary to determine what messages to send to the end user and when.
 
 *[Learn More](https://nodejs.org/en/docs/)*
 
@@ -33,7 +32,7 @@ Express is a helpful framework built around Node.js for performing actions as a 
 *[Learn More](http://expressjs.com/)*
 
 #### Embedded JavaScript Templates (EJS)
-EJS is a very simple templating language. This helps us create HTML for the pages we show in a programmatic way, and inject values into a web page. Here we use it to decide whether to show the Preferences view, the Product view or the Error page, and to point the WebView at the correct list for the viewer.
+EJS is a very simple templating language. This helps us create HTML for the pages we show in a programmatic way. Here we use it to decide whether to show the Preferences view, the Product view or the Error page.
 
 *[Learn More](http://ejs.co/)*
 
@@ -41,16 +40,6 @@ EJS is a very simple templating language. This helps us create HTML for the page
 An amazing framework that allows us to create highly interactive user interfaces. Used heavily in this example to create the Preferences view.
 
 *[Learn More](https://facebook.github.io/react/)*
-
-#### Socket.IO
-Simplifies real-time interactions between users and the server.
-
-*[Learn More](https://socket.io/)*
-
-#### Knex.js
-Knex.js is a SQL query builder for Node.js that is compatible with Postgres, MSSQL, MySQL, MariaDB, SQLite3, and Oracle.
-
-*[Learn More](http://knexjs.org/)*
 
 #### WeUI
 You can get started quickly with mobile-friendly web UI by using a library of components like the one from [WeUI](https://weui.io/).
@@ -66,7 +55,6 @@ This demo bot is immediately runnable on Heroku!
 * Yarn ([https://yarnpkg.com/en/](https://yarnpkg.com/en/))
 * Heroku CLI ([https://devcenter.heroku.com/articles/heroku-cli](https://devcenter.heroku.com/articles/heroku-cli))
 * Facebook developers account ([https://developers.facebook.com](https://developers.facebook.com) )
-* Postgres ([https://www.postgresql.org](https://www.postgresql.org))
 
 ### Run this as your very own Messenger bot on heroku
 *(Ensure the above prerequisites are installed on your machine)*
@@ -78,17 +66,14 @@ $ cd /path/to/fb-chatbots
 
 $ heroku create
 
-# HEROKU_APPID is given to you from the above command. Run `heroku apps` to list them all.
-$ heroku addons:create heroku-postgresql --app {HEROKU_APPID}
-
-# URL_TO_HEROKU_APP is the URL given to you from the above command
-$ heroku config:set APP_URL='https://{URL_TO_HEROKU_APP}'
+# URL_TO_HEROKU_APP is the url given to you from the above command
+$ heroku config:set SERVER_URL='https://{URL_TO_HEROKU_APP}'
 
 # Note the token can be any word chosen by you and is used to by Facebook to check that they have the correct server for your Messenger Bot
 $ heroku config:set WEBHOOK_TOKEN='random_demo_token_123'
 
-# This pushes just the chat-extensions folder to Heroku
-$ git subtree push --prefix chat-extensions heroku master
+# This pushes just the gui-webview folder to Heroku
+$ git subtree push --prefix gui-webview heroku master
 ```
 
 ##### It should look like this in your terminal
@@ -96,7 +81,7 @@ $ git subtree push --prefix chat-extensions heroku master
 
 ##### Other useful commands for pushing the code to Heroku
 To force push to Heroku, useful for moving your changes from your machine to Heroku, use this command:
-* `git push --force heroku 'git subtree split --prefix chat-extensions HEAD':master`
+* `git push --force heroku 'git subtree split --prefix gui-webview HEAD':master`
 
 #### 2. Setup your Bot on Facebook
 
@@ -144,23 +129,15 @@ before you commit and push your changes.
 ### Running locally
 You may want to run this bot on a platform outside of Heroku or simply have it available locally for testing purposes.
 ```bash
-$ cd path/to/repo/chat-extensions
-$ createdb list_bot_dev
-$ createdb list_bot_test
+$ cd path/to/repo/gui-webview
 $ yarn install
-$ knex migrate:latest
-$ knex seed:run
-$ yarn build:watch
-
-# In another tab
-
+$ yarn build
 $ export DEMO=true
-$ export LOCAL=true
 $ yarn start
 ```
 
-### Running tests & linters
+### Running tests
 ```bash
-$ cd path/to/repo/chat-extensions
+$ cd path/to/repo/gui-webview
 $ yarn quality
 ```

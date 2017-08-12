@@ -9,213 +9,233 @@
 /* eslint-disable max-len */
 
 /*
- * BUTTONS
- *
- * Objects and methods that create objects that represent
- * buttons to be used in various UI elements.
- */
-
-/**
- * Button for opening a specific list in a webview
- *
- * @param {string} listUrl - URL for a specific list.
- * @param {string} buttonText - Text for the action button.
- * @returns {object} -
- *   Message to create a button pointing to the list in a webview.
- */
-const openExistingListButton = (listUrl, buttonText = 'Edit List') => {
-  return {
-    type: 'web_url',
-    title: buttonText,
-    url: listUrl,
-    messenger_extensions: true,
-    webview_height_ratio: 'tall',
-  };
-};
-
-/**
- * Button for opening a new list in a webview
- *
- * @param {string} apiUri - Hostname of the server.
- * @param {string=} buttonTitle - Button title.
- * @returns {object} -
- *   Message to create a button pointing to the new list form.
- */
-const createListButton = (apiUri, buttonTitle = 'Create a List') => {
-  return {
-    type: 'web_url',
-    url: `${apiUri}/lists/new`,
-    title: buttonTitle,
-    webview_height_ratio: 'tall',
-    messenger_extensions: true,
-  };
-};
-
-/*
  * MESSAGES
  *
  * Objects and methods that create objects that represent
  * messages sent to Messenger users.
  */
 
+// ===== STORES ================================================================
+import UserStore from '../stores/user-store';
+
+// ===== UTILS =================================================================
+import {dateString} from '../utils/date-string-format';
+
+const SERVER_URL = process.env.SERVER_URL;
+
 /**
- * Message that welcomes the user to the bot
- *
- * @param {string} apiUri - Hostname of the server.
- * @returns {object} - Message with welcome text and a button to start a new list.
+ * Button for displaying the preferences menu inside a webview
  */
-const welcomeMessage = (apiUri) => {
+const setPreferencesButton = {
+  type: 'web_url',
+  title: 'Set Gift Preferences',
+  url: `${SERVER_URL}/`,
+  webview_height_ratio: 'tall',
+  messenger_extensions: true,
+};
+
+/*
+ * Button for displaying the view details button for a gift
+ */
+const viewDetailsButton = (giftId) => {
   return {
-    attachment: {
-      type: 'template',
-      payload: {
-        template_type: 'button',
-        text: 'Ready to make a shared list with your friends? Everyone can add items, check things off, and stay in sync.',
-        buttons: [
-          createListButton(apiUri),
-        ],
+    title: 'View Details',
+    type: 'web_url',
+    url: `${SERVER_URL}/gifts/${giftId}`,
+    webview_height_ratio: 'compact',
+    messenger_extensions: true,
+  };
+};
+
+/*
+ * Button for selecting a gift
+ */
+const chooseGiftButton = (giftId) => {
+  return {
+    type: 'postback',
+    title: 'Choose This Gift',
+    payload: JSON.stringify({
+      type: 'CHOOSE_GIFT',
+      data: {
+        giftId: giftId,
       },
-    },
+    }),
   };
 };
 
 /**
- * Message for when the user has no lists yet.
- *
- * @param {string} apiUri - Hostname of the server.
- * @returns {object} - Message with welcome text and a button to start a new list.
+ * Button for displaying a postback button that triggers the change gift flow
  */
-const noListsMessage = (apiUri) => {
-  return {
-    attachment: {
-      type: 'template',
-      payload: {
-        template_type: 'button',
-        text: 'It looks like you don’t have any lists yet. Would you like to create one?',
-        buttons: [
-          createListButton(apiUri),
-        ],
-      },
+const changeGiftButton = {
+  type: 'postback',
+  title: 'Change Gift',
+  payload: JSON.stringify({
+    type: 'CHANGE_GIFT',
+  }),
+};
+
+/**
+ * Message that informs the user of the promotion and prompts
+ * them to set their preferences.
+ */
+const helloRewardMessage = {
+  attachment: {
+    type: 'template',
+    payload: {
+      template_type: 'button',
+      text: 'Thanks for joining our reward program! We’d love to send you a free birthday gift.',
+      buttons: [setPreferencesButton],
     },
-  };
+  },
 };
 
 /**
- * Helper to construct a URI for the desired list
- *
- * @param {string} apiUri -
- *   Base URI for the server.
- *   Because this moduele may be called from the front end, we need to pass it explicitely.
- * @param {int} listId - The list ID.
- * @returns {string} - URI for the required list.
+ * Message that informs the user that their preferences have changed.
  */
-const listUrl = (apiUri, listId) => `${apiUri}/lists/${listId}`;
-
-/**
- * A single list for the list template.
- * The name here is to distinguish lists and list templates.
- *
- * @param {string} id            - List ID.
- * @param {string} apiUri        - Url of endpoint.
- * @param {string} subscriberIds - Ids of each subscriber.
- * @param {string} title         - List title.
- * @returns {object} - Message with welcome text and a button to start a new list.
- */
-const listElement = ({id, subscriberIds, title}, apiUri) => {
-  return {
-    title: title,
-    subtitle: `Shared with ${[...subscriberIds].length} people`,
-    default_action: {
-      type: 'web_url',
-      url: listUrl(apiUri, id),
-      messenger_extensions: true,
-      webview_height_ratio: 'tall',
-    },
-  };
+const preferencesUpdatedMessage = {
+  text: 'OK, we’ve updated your preferences. You can change them anytime you want from the menu.',
 };
 
 /**
- * Messages for a list template of lists (meta!), offset by how many
- * "read mores" the user has been through
- *
- * @param {string} apiUri - Hostname of the server.
- * @param {string} action - The postback action
- * @param {Array.<Object>} lists - All of the lists to be (eventually) displayed.
- * @param {int=} offset - How far through the list we are so far.
- * @returns {object} - Message with welcome text and a button to start a new list.
+ * Message that informs that we have their current gift selected.
  */
-const paginatedListsMessage = (apiUri, action, lists, offset = 0) => {
-  const pageLists = lists.slice(offset, offset + 4);
-
-  let buttons;
-  if (lists.length > (offset + 4)) {
-    buttons = [
-      {
-        title: 'View More',
-        type: 'postback',
-        payload: `${action}_OFFSET_${offset + 4}`,
-      },
-    ];
-  }
-
-  return {
-    attachment: {
-      type: 'template',
-      payload: {
-        template_type: 'list',
-        top_element_style: 'compact',
-        elements: pageLists.map((list) => listElement(list, apiUri)),
-        buttons,
-      },
-    },
-  };
+const currentGiftText = {
+  text: 'This is your current gift selection. If you’d like to change it, you can do so below.',
 };
 
 /**
- * Message that informs the user that their list has been created.
- */
-const listCreatedMessage = {
-  text: 'Your list was created.',
-};
-
-/**
- * Message to configure the customized sharing menu in the webview
+ * Message that informs the user what gift has been selected for them
+ * and prompts them to select a different gift.
  *
- * @param {string} apiUri - Application basename
- * @param {string} listId - The ID for list to be shared
- * @param {string} title - Title of the list
- * @param {string} buttonText - Text for the action button.
- * @returns {object} - Message to configure the customized sharing menu.
+ * @param {String} recipientId Id of the user to send the message to.
+ * @returns {Object} Message payload
  */
-const shareListMessage = (apiUri, listId, title, buttonText) => {
-  const urlToList = listUrl(apiUri, listId);
-  console.log({urlToList});
+const currentGiftButton = (recipientId) => {
+  const user = UserStore.get(recipientId);
+  const gift = user.preferedGift;
+
   return {
     attachment: {
       type: 'template',
       payload: {
         template_type: 'generic',
-        elements: [{
-          title: title,
-          image_url: `${apiUri}/media/button-cover.png`,
-          subtitle: 'A shared list from Tasks',
-          default_action: {
-            type: 'web_url',
-            url: urlToList,
-            messenger_extensions: true,
+        elements: [
+          {
+            title: `Your Gift: ${gift.name}`,
+            image_url: gift.images.original,
+            subtitle: gift.description,
+            buttons: [
+              viewDetailsButton(gift.id),
+              changeGiftButton,
+            ],
           },
-          buttons: [openExistingListButton(urlToList, buttonText)],
-        }],
+        ],
       },
     },
   };
 };
 
+/**
+ * Message that precedes us displaying recommended gifts.
+ */
+const giftOptionsText = {
+  text: 'Here are some gift options for you:',
+};
+
+/**
+ * Message that informs the user what gift has been selected for them
+ * and prompts them to select a different gift.
+ *
+ * @param {Object} id - The Gifts unique id.
+ * @param {Object} name - The Gifts name.
+ * @param {Object} description - The Gifts description.
+ * @param {Object} original - Path to the original image for the gift.
+ * @returns {Object} Messenger representation of a carousel item.
+ */
+const giftToCarouselItem = ({id, name, description, images: {original}}) => {
+  return {
+    title: name,
+    image_url: original,
+    subtitle: description,
+    buttons: [
+      viewDetailsButton(id),
+      chooseGiftButton(id),
+    ],
+  };
+};
+
+/**
+ * Message that informs the user what gift has been selected for them
+ * and prompts them to select a different gift.
+ *
+ * @param {String} recipientId Id of the user to send the message to.
+ * @returns {Object} Message payload
+ */
+const giftOptionsCarosel = (recipientId) => {
+  const user = UserStore.get(recipientId) || UserStore.insert({id: recipientId});
+  const giftOptions = user.getRecommendedGifts();
+
+  const carouselItems = giftOptions.map(giftToCarouselItem);
+
+  return {
+    attachment: {
+      type: 'template',
+      payload: {
+        template_type: 'generic',
+        elements: carouselItems,
+      },
+    },
+  };
+};
+
+/**
+ * Message that informs the user what gift will be sent to them.
+ *
+ * @param {String} recipientId Id of the user to send the message to.
+ * @returns {Object} Message payload
+ */
+const giftChangedMessage = (recipientId) => {
+  const {preferedGift, dateOfBirth} = UserStore.get(recipientId);
+  return {
+    text: `Perfect! You can look forward to the ${preferedGift.name} on ${dateString(dateOfBirth)}. `,
+  };
+};
+
+/**
+ * The persistent menu for users to use.
+ */
+const persistentMenu = {
+  setting_type: 'call_to_actions',
+  thread_state: 'existing_thread',
+  call_to_actions: [
+    setPreferencesButton,
+    changeGiftButton,
+  ],
+};
+
+/**
+ * The Get Started button.
+ */
+const getStarted = {
+  setting_type: 'call_to_actions',
+  thread_state: 'new_thread',
+  call_to_actions: [
+    {
+      payload: JSON.stringify({
+        type: 'GET_STARTED',
+      }),
+    },
+  ],
+};
+
 export default {
-  welcomeMessage,
-  listCreatedMessage,
-  paginatedListsMessage,
-  createListButton,
-  noListsMessage,
-  shareListMessage,
+  helloRewardMessage,
+  preferencesUpdatedMessage,
+  currentGiftText,
+  currentGiftButton,
+  giftOptionsText,
+  giftOptionsCarosel,
+  giftChangedMessage,
+  persistentMenu,
+  getStarted,
 };

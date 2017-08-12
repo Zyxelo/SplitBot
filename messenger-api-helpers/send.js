@@ -9,10 +9,8 @@
 import castArray from 'lodash/castArray';
 
 // ===== MESSENGER =============================================================
-import messages from './messages';
 import api from './api';
-
-const {APP_URL} = process.env;
+import messages from './messages';
 
 // Turns typing indicator on.
 const typingOn = (recipientId) => {
@@ -68,66 +66,40 @@ const sendReadReceipt = (recipientId) => {
   api.callMessagesAPI(messageData);
 };
 
-// Send the initial message welcoming & describing the bot.
-const sendWelcomeMessage = (recipientId) => {
-  sendMessage(recipientId, messages.welcomeMessage(APP_URL));
-};
+// Send the initial message telling the user about the promotion.
+const sendHelloRewardMessage = (recipientId) =>
+  sendMessage(recipientId, messages.helloRewardMessage);
 
-// Let the user know that they don't have any lists yet.
-const sendNoListsYet = (recipientId) => {
-  sendMessage(recipientId, messages.noListsMessage(APP_URL));
-};
-
-// Show user the lists they are associated with.
-const sendLists = (recipientId, action, lists, offset) => {
-  // Show different responses based on number of lists.
-  switch (lists.length) {
-  case 0:
-    // Tell User they have no lists.
-    sendNoListsYet(recipientId);
-    break;
-  case 1:
-    // Show a single list — List view templates require
-    // a minimum of 2 Elements. Rease More at:
-    // https://developers.facebook.com/docs/
-    // messenger-platform/send-api-reference/list-template
-    const {id, title} = lists[0];
-
-    sendMessage(
-      recipientId,
-      messages.shareListMessage(APP_URL, id, title, 'Open List'),
-    );
-
-    break;
-  default:
-    // Show a paginated set of lists — List view templates require
-    // a maximum of 4 Elements. Rease More at:
-    // https://developers.facebook.com/docs/
-    // messenger-platform/send-api-reference/list-template
-    sendMessage(
-      recipientId,
-      messages.paginatedListsMessage(APP_URL, action, lists, offset)
-    );
-
-    break;
-  }
-};
-
-// Send a message notifying the user their list has been created.
-const sendListCreated = (recipientId, listId, title) => {
+// Send a message indicating to a user that their preferences have changed.
+const sendPreferencesChangedMessage = (recipientId) => {
   sendMessage(
     recipientId,
     [
-      messages.listCreatedMessage,
-      messages.shareListMessage(APP_URL, listId, title, 'Open List'),
+      messages.preferencesUpdatedMessage,
+      messages.currentGiftText,
+      messages.currentGiftButton(recipientId),
     ]);
 };
 
+// Send a message displaying the gifts a user can choose from.
+const sendChooseGiftMessage = (recipientId) => {
+  sendMessage(
+    recipientId,
+    [
+      messages.giftOptionsText,
+      messages.giftOptionsCarosel(recipientId),
+    ]);
+};
+
+// Send a message that a users preffered gift has changed.
+const sendGiftChangedMessage = (recipientId) =>
+  sendMessage(recipientId, messages.giftChangedMessage(recipientId));
+
 export default {
-  sendListCreated,
-  sendLists,
   sendMessage,
-  sendNoListsYet,
   sendReadReceipt,
-  sendWelcomeMessage,
+  sendHelloRewardMessage,
+  sendPreferencesChangedMessage,
+  sendChooseGiftMessage,
+  sendGiftChangedMessage,
 };

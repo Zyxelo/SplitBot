@@ -5,15 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* eslint-disable camelcase */
-
 // ===== MESSENGER =============================================================
+import messages from './messages';
 import api from './api';
 
-/* ----------  Globals  ---------- */
-const {APP_URL} = process.env;
+/*
+ * SETUP
+ *
+ * Methods that should only be called at first run
+ * that help set up Messenger related config
+ */
 
-/* ----------  Functions  ---------- */
+const SERVER_URL = process.env.SERVER_URL;
 
 /**
  * Adds the server url to the Messenger App's whitelist.
@@ -23,11 +26,11 @@ const {APP_URL} = process.env;
  *
  * @returns {undefined}
  */
-const domainWhitelisting = () => {
+const setDomainWhitelisting = () => {
   api.callThreadAPI(
     {
       setting_type: 'domain_whitelisting',
-      whitelisted_domains: [APP_URL],
+      whitelisted_domains: [SERVER_URL],
       domain_action_type: 'add',
     },
     {
@@ -41,32 +44,8 @@ const domainWhitelisting = () => {
  *
  * @returns {undefined}
  */
-const persistentMenu = () => {
-  api.callThreadAPI(
-    {
-      setting_type: 'call_to_actions',
-      thread_state: 'existing_thread',
-      call_to_actions: [
-        {
-          type: 'web_url',
-          title: 'Create List',
-          url: `${APP_URL}/lists/new`,
-          webview_height_ratio: 'tall',
-          messenger_extensions: true,
-        },
-        {
-          type: 'postback',
-          title: 'My Lists',
-          payload: 'owned_lists',
-        },
-        {
-          type: 'postback',
-          title: 'Shared With Me',
-          payload: 'subscribed_lists',
-        },
-      ],
-    }
-  );
+const setPersistentMenu = () => {
+  api.callThreadAPI(messages.persistentMenu);
 };
 
 /**
@@ -74,22 +53,12 @@ const persistentMenu = () => {
  *
  * @returns {undefined}
  */
-const getStartedButton = () => {
-  api.callThreadAPI(
-    {
-      setting_type: 'call_to_actions',
-      thread_state: 'new_thread',
-      call_to_actions: [
-        {
-          payload: 'get_started',
-        },
-      ],
-    }
-  );
+const setGetStarted = () => {
+  api.callThreadAPI(messages.getStarted);
 };
 
 export default {
-  domainWhitelisting,
-  persistentMenu,
-  getStartedButton,
+  setDomainWhitelisting,
+  setPersistentMenu,
+  setGetStarted,
 };

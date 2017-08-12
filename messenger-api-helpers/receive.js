@@ -5,36 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// ===== MESSENGER =============================================================
+// ===== MODULES ===============================================================
 import sendApi from './send';
 
-// ===== MODELS ================================================================
-import Lists from '../models/lists';
+// ===== STORES ================================================================
+import UserStore from '../stores/user-store';
 
-/**
- * sendSharedLists - Gets & Sends a list of all lists a user owns.
- * @param   {Number} senderId - FB ID to send to.
- * @param   {String} type - Postback Action type to respond to.
- * @returns {Undefined} - .
- */
-const sendOwnedLists = (senderId, type) => {
-  Lists.getOwnedForUser(senderId)
-    .then((lists) => {
-      sendApi.sendLists(senderId, type, lists, Number(type.substring(19)));
-    });
-};
-
-/**
- * sendSharedLists - Gets & Sends a list of all lists a user is associated with.
- * @param   {Number} senderId - FB ID to send to.
- * @param   {String} type - Action type to send.
- * @returns {Undefined} - .
- */
-const sendSharedLists = (senderId, type) => {
-  Lists.getSharedToUser(senderId)
-    .then((lists) => {
-      sendApi.sendLists(senderId, type, lists, Number(type.substring(22)));
-    });
+// Updates a users preferred gift, then notifies them of the change.
+const handleNewGiftSelected = (senderId, giftId) => {
+  const user = UserStore.get(senderId);
+  user.setPreferedGift(giftId);
+  sendApi.sendGiftChangedMessage(senderId);
 };
 
 /*
@@ -44,28 +25,31 @@ const sendSharedLists = (senderId, type) => {
  */
 const handleReceivePostback = (event) => {
   /**
-   * The 'payload' param is a developer-defined field which is
+   * The 'payload' parameter is a developer-defined field which is
    * set in a postbackbutton for Structured Messages.
    *
    * In this case we've defined our payload in our postback
    * actions to be a string that represents a JSON object
    * containing `type` and `data` properties. EG:
    */
-  const type = event.postback.payload;
+  const {type, data} = JSON.parse(event.postback.payload);
   const senderId = event.sender.id;
 
-  // Perform an action based on the type of payload received.
-  if (type.substring(0, 11) === 'owned_lists') {
-    sendOwnedLists(senderId, type);
-  } else if (type.substring(0, 16) === 'subscribed_lists') {
-    sendSharedLists(senderId, type);
-  } else if (type.substring(0, 11) === 'get_started') {
-    sendApi.sendWelcomeMessage(senderId);
-    return;
+  // perform an action based on the type of payload received
+  switch (type) {
+  case 'CHANGE_GIFT':
+    sendApi.sendChooseGiftMessage(senderId);
+    break;
+  case 'CHOOSE_GIFT':
+    handleNewGiftSelected(senderId, data.giftId);
+    break;
+  case 'GET_STARTED':
+    sendApi.sendHelloRewardMessage(senderId);
+    break;
+  default:
+    console.error(`Unknown Postback called: ${type}`);
+    break;
   }
-  // eslint-enable camelcase
-
-  sendApi.sendMessage(senderId, `Unknown Postback called: ${type}`);
 };
 
 /*
@@ -89,4 +73,5 @@ const handleReceiveMessage = (event) => {
 export default {
   handleReceivePostback,
   handleReceiveMessage,
+  handleNewGiftSelected,
 };

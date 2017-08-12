@@ -17,10 +17,10 @@ const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 /**
  * Send messages in order to the Facebook graph API.
  *
- * @param {String}          endPoint - Specific endpoint to send data to
- * @param {Object|Object[]} messageDataArray Payloads to send individually
- * @param {Object}          queryParams - Query Parameters
- * @param {Object}          retries - # of times to attempt to send a message.
+ * @param   {String}          endPoint - Specific endpoint to send data to
+ * @param   {Object|Object[]} messageDataArray - Payloads to send individually
+ * @param   {Object}          queryParams - Query Parameters
+ * @param   {Object}          retries - # of times to attempt to send a message.
  * @returns {undefined}
  */
 const callAPI = (endPoint, messageDataArray, queryParams = {}, retries = 5) => {
@@ -55,18 +55,18 @@ const callAPI = (endPoint, messageDataArray, queryParams = {}, retries = 5) => {
 
   }, (error, response, body) => {
     if (!error && response.statusCode === 200) {
-      // Message has been successfully received by Facebook
+      // Message has been successfully received by Facebook.
       console.log(
         `Successfully sent message to ${endPoint} endpoint: `,
         JSON.stringify(body)
       );
 
-      // continue sending payloads until queue empty
+      // Continue sending payloads until queue empty.
       if (!isEmpty(queue)) {
         callAPI(endPoint, queue, queryParams);
       }
     } else {
-      // Message has not been successfully received by Facebook
+      // Message has not been successfully received by Facebook.
       console.error(
         `Failed calling Messenger API endpoint ${endPoint}`,
         response.statusCode,

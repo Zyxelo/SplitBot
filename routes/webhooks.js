@@ -38,7 +38,7 @@ router.get('/', (req, res) => {
  * 2. Postbacks
  */
 router.post('/', (req, res) => {
-    /*
+  /*
     You must send back a status of 200(success) within 20 seconds
     to let us know you've successfully received the callback.
     Otherwise, the request will time out.
@@ -53,7 +53,6 @@ router.post('/', (req, res) => {
   res.sendStatus(200);
 
   const data = req.body;
-  console.log('Webhook POST', JSON.stringify(data));
 
   // Make sure this is a page subscription
   if (data.object === 'page') {
@@ -63,12 +62,9 @@ router.post('/', (req, res) => {
       // Iterate over each messaging event and handle accordingly
       pageEntry.messaging.forEach((messagingEvent) => {
         console.log({messagingEvent});
-
         if (messagingEvent.message) {
           receiveApi.handleReceiveMessage(messagingEvent);
-        }
-
-        if (messagingEvent.postback) {
+        } if (messagingEvent.postback) {
           receiveApi.handleReceivePostback(messagingEvent);
         } else {
           console.log(

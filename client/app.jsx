@@ -5,60 +5,131 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// ===== MODULES ===============================================================
-import io from 'socket.io-client';
-import React, {createElement} from 'react';
-import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
-import {Panel, Form} from 'react-weui';
+/* eslint-disable react/react-in-jsx-scope */
 
-// ===== COMPONENTS ============================================================
-import Invite from './invite.jsx';
-import Item from './item.jsx';
-import ListNotFound from './list_not_found.jsx';
-import LoadingScreen from './loading_screen.jsx';
-import NewItem from './new_item.jsx';
-import Title from './title.jsx';
-import Updating from './updating.jsx';
-import Viewers from './viewers.jsx';
+/* =============================================
+   =                   Setup                   =
+   ============================================= */
 
-let socket;
+/* ----------  External Libraries  ---------- */
+
+import React from 'react';
+import 'whatwg-fetch';
+
+/* ----------  External UI Kit  ---------- */
+
+import {
+  Button,
+  ButtonArea,
+  CellBody,
+  CellFooter,
+  CellHeader,
+  CellsTitle,
+  Form,
+  FormCell,
+  Slider,
+  Switch,
+} from 'react-weui';
+
+/* ----------  Internal Components  ---------- */
+
+import ArrivalPeriod from './arrival-period.jsx';
+import Environment from './environment.jsx';
+import GiftCategory from './gift-category.jsx';
+import Loading from './loading.jsx';
+import SkinType from './skin-type.jsx';
+
+/* ----------  Helpers  ---------- */
+
+import WebviewControls from '../messenger-api-helpers/webview-controls';
+import {dateString} from '../utils/date-string-format';
+
+/* ----------  Models  ---------- */
+
+import Gift from '../models/gift';
+import User from '../models/user';
+
+const {ENVIRONMENTS} = User;
 
 /* =============================================
    =            React Application              =
    ============================================= */
 
-export default class App extends React.Component {
-  constructor(props) {
-    super(props);
+export default class App extends React.PureComponent {
 
-    this.addItem = this.addItem.bind(this);
-    this.addNewItem = this.addNewItem.bind(this);
-    this.pushUpdatedItem = this.pushUpdatedItem.bind(this);
-    this.setDocumentTitle = this.setDocumentTitle.bind(this);
-    this.setItem = this.setItem.bind(this);
-    this.setNewItemText = this.setNewItemText.bind(this);
-    this.setOwnerId = this.setOwnerId.bind(this);
-    this.setTitleText = this.setTitleText.bind(this);
-    this.userJoin = this.userJoin.bind(this);
-    this.setOnlineUsers = this.setOnlineUsers.bind(this);
+  /* =============================================
+     =               Configuration               =
+     ============================================= */
 
-    this.state = {
-      items: [],
-      newItemText: '',
-      ownerId: null,
-      resetting: false,
-      title: this.props.title,
-      updating: false,
-      users: [],
-    };
+  /* ----------  Top-level App Constants  ---------- */
+
+  static dateConfig = {
+    month: 'long',
+    day: 'numeric',
   }
 
+  /**
+   * Keeping the display labels in the front end as a separation of concerns
+   * The actual values are being imported later via static attributes on
+   * the models
+   *
+   * We have introduced an ordering dependency, but this is also the order that
+   * we wish to display the options in the UI.
+   */
+
+  static giftCategories = [
+    {
+      title: 'Moisturizers',
+      subtitle: 'Daily moisturizers & night creams',
+      image: 'moisturizers-filtered-cropped.jpg',
+    },
+    {
+      title: 'Cleansers',
+      subtitle: 'Face washes, wipes & exfoliators',
+      image: 'cleansers-filtered-cropped.jpg',
+    },
+    {
+      title: 'Masks',
+      subtitle: 'Face & sheet masks',
+      image: 'masks-filtered-cropped.jpg',
+    },
+    {
+      title: 'Lip Treatments',
+      subtitle: 'Balms & sunscreen',
+      image: 'lip-treatments-filtered-cropped.jpg',
+    },
+  ]
+
+  static skinTypes = [
+    'Acne or blemishes',
+    'Oiliness',
+    'Loss of tone',
+    'Wrinkles',
+    'Sensitivity',
+    'Dehydration (tight with oil)',
+    'Dryness (flaky with no oil)',
+    'Scars',
+  ]
+
+  static arrivalPeriods = [
+    'Last 30 days',
+    'Last 60 days',
+    'Coming soon',
+  ]
+
+  /* ----------  React Configuration  ---------- */
+
   static propTypes = {
-    apiUri: React.PropTypes.string.isRequired,
-    listId: React.PropTypes.number.isRequired,
-    socketAddress: React.PropTypes.string.isRequired,
-    viewerId: React.PropTypes.number.isRequired,
-    threadType: React.PropTypes.string.isRequired,
+    userId: React.PropTypes.string.isRequired,
+  }
+
+  state = {
+    dateOfBirth: null,
+    giftCategory: null,
+    arrivalPeriod: null,
+    environment: null,
+    skinTypes: [],
+    persist: true,
   }
 
   /* =============================================
@@ -67,142 +138,113 @@ export default class App extends React.Component {
 
   /* ----------  Communicate with Server  ---------- */
 
-  /*
-   * Push a message to socket server
-   * To keep things clear, we're distinguishing push events by automatically
-   * prepending 'push:' to the channel name
+  /**
+   * Pull saved data from the server, and populate the form
+   * If there's an error, we log it to the console. Errors will not be availble
+   * within the Messenger webview. If you need to see them 'live', switch to
+   * an `alert()`.
    *
-   * Returned responses have no prefix,
-   * and read the same in the rest of the code
+   * @returns {undefined}
    */
-  pushToRemote(channel, message) {
-    this.setState({updating: true}); // Set the updating spinner
+  pullData() {
+    const endpoint = `/users/${this.props.userId}`;
+    console.log(`Pulling data from ${endpoint}...`);
 
-    socket.emit(
-      `push:${channel}`,
-      {
-        senderId: this.props.viewerId,
-        listId: this.props.listId,
-        ...message,
-      },
-      (status) => {
-        // Finished successfully with a special 'ok' message from socket server
-        if (status !== 'ok') {
-          console.error(
-            `Problem pushing to ${channel}`,
-            JSON.stringify(message)
-          );
+    fetch(endpoint)
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
         }
 
+        console.error(
+          status,
+          `Unable to fetch user data for User ${this.props.userId}'`
+        );
+      }).then((jsonResponse) => {
+        console.log(`Data fetched successfully: ${jsonResponse}`);
+
         this.setState({
-          socketStatus: status,
-          updating: false, // Turn spinner off
+          ...jsonResponse,
+          skinTypes: new Set(jsonResponse.skinTypes),
         });
+      }).catch((err) => console.error('Error pulling data', err));
+  }
+
+  pushData() {
+    const content = this.jsonState();
+    console.log(`Push data: ${content}`);
+
+    fetch(`/users/${this.props.userId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: content,
+    }).then((response) => {
+      if (response.ok) {
+        console.log('Data successfully updated on the server!');
+        return;
       }
-    );
-  }
 
-  /* ----------  Update Document Attributes  ---------- */
-
-  setDocumentTitle(title = 'Shopping List') {
-    console.log('Updating document title (above page):', title);
-    document.title = title;
-  }
-
-  /* =============================================
-     =           State & Event Handlers          =
-     ============================================= */
-
-  /* ----------  List  ---------- */
-
-  // For the initial data fetch
-  setOwnerId(ownerId) {
-    console.log('Set owner ID:', ownerId);
-    this.setState({ownerId});
-  }
-
-  setTitleText(title) {
-    console.log('Push title to remote:', title);
-    this.setState({title});
-    this.setDocumentTitle(title);
-    this.pushToRemote('title:update', {title});
-  }
-
-  /* ----------  Users  ---------- */
-
-  // Socket Event Handler for Set Online Users event.
-  setOnlineUsers(onlineUserFbIds = []) {
-    const users = this.state.users.map((user) => {
-      const isOnline =
-        onlineUserFbIds.find((onlineUserFbId) => onlineUserFbId === user.fbId);
-
-      return Object.assign({}, user, {online: isOnline});
-    });
-
-    this.setState({users});
-  }
-
-  // Socket Event Handler for User Join event.
-  userJoin(newUser) {
-    const oldUsers = this.state.users.slice();
-    const existing = oldUsers.find((user) => user.fbId === newUser.fbId);
-
-    let users;
-    if (existing) {
-      users = oldUsers.map((user) =>
-        (user.fbId === newUser.fbId)
-        ? newUser
-        : user
+      console.error(
+        response.status,
+        `Unable to save user data for User ${this.props.userId}'`
       );
-    } else {
-      oldUsers.push(newUser);
-      users = oldUsers;
-    }
-
-    this.setState({users});
+    }).catch((err) => console.error('Error pushing data', err)).then(() => {
+      WebviewControls.close();
+    });
   }
 
-  /* ----------  Items  ---------- */
+  /* ----------  Formatters  ---------- */
 
-  addItem(item) {
-    this.setState({items: [...this.state.items, item]});
+  // Format state for easy printing or transmission
+  jsonState() {
+    return JSON.stringify({
+      ...this.state,
+      skinTypes: [...this.state.skinTypes],
+    });
   }
 
-  pushUpdatedItem(itemId, name, completerFbId) {
-    this.pushToRemote('item:update', {id: itemId, name, completerFbId});
+  /* ----------  State Handlers  ---------- */
+
+  setGiftCategory(giftCategory) {
+    console.log(`Gift Category: ${giftCategory}`);
+    this.setState({giftCategory});
   }
 
-  setItem({id, name, completerFbId}) {
-    const items = this.state.items.map((item) =>
-      (item.id === id)
-        ? Object.assign({}, item, {id: id, name, completerFbId})
-        : item
-    );
-
-    this.setState({items});
+  setArrivalPeriod(arrivalPeriod) {
+    console.log(`Arrival Period: ${arrivalPeriod}`);
+    this.setState({arrivalPeriod});
   }
 
-  /* ----------  New Item Field  ---------- */
-
-  setNewItemText(newText) {
-    console.log('Set new item text:', newText);
-    this.setState({newItemText: newText});
+  setEnvironment(envIndex) {
+    const environment = ENVIRONMENTS[envIndex];
+    console.log(`Environment: ${environment}`);
+    this.setState({environment});
   }
 
-  // Turn new item text into an actual list item
-  addNewItem() {
-    const {newItemText: name} = this.state;
-
-    this.resetNewItem();
-    this.pushToRemote('item:add', {name});
+  addSkinType(type) {
+    console.log(`Add skin type: ${type}`);
+    const oldSkinTypes = this.state.skinTypes;
+    const skinTypes = new Set(oldSkinTypes);
+    skinTypes.add(type);
+    this.setState({skinTypes});
   }
 
-  resetNewItem() {
-    this.setState({resetting: true});
+  removeSkinType(type) {
+    console.log(`Remove skin type: ${type}`);
+    const oldSkinTypes = this.state.skinTypes;
+    const skinTypes = new Set(oldSkinTypes);
+    skinTypes.delete(type);
+    this.setState({skinTypes});
+  }
 
-    setTimeout(() => {
-      this.setState({newItemText: '', resetting: false});
-    }, 600);
+  setPersist(persist) {
+    console.log(`Persist: ${JSON.stringify(persist)}`);
+    this.setState({persist});
+  }
+
+  setDateOfBirth(dateOfBirth) {
+    console.log(`Set date of birth: ${dateOfBirth}`);
+    this.setState({dateOfBirth});
   }
 
   /* =============================================
@@ -210,173 +252,154 @@ export default class App extends React.Component {
      ============================================= */
 
   componentWillMount() {
-    // Connect to socket.
-    socket = io.connect(
-      this.props.socketAddress,
-      {reconnect: true, secure: true}
-    );
-
-    // Add socket event handlers.
-    socket.on('init', ({users, items, ownerId, title} = {}) => {
-      this.setState({users, items, ownerId, title});
-    });
-
-    socket.on('item:add', this.addItem);
-    socket.on('item:update', this.setItem);
-    socket.on('list:setOwnerId', this.setOwnerId);
-    socket.on('title:update', this.setDocumentTitle);
-    socket.on('user:join', this.userJoin);
-    socket.on('users:setOnline', this.setOnlineUsers);
-
-    var self = this;
-    // Check for permission, ask if there is none
-    window.MessengerExtensions.getGrantedPermissions(function(response) {
-      // check if permission exists
-      var permissions = response.permissions;
-      if (permissions.indexOf('user_profile') > -1) {
-        self.pushToRemote('user:join', {id: self.props.viewerId});
-      } else {
-        window.MessengerExtensions.askPermission(function(response) {
-          var isGranted = response.isGranted;
-          if (isGranted) {
-            self.pushToRemote('user:join', {id: self.props.viewerId});
-          } else {
-            window.MessengerExtensions.requestCloseBrowser(null, null);
-          }
-        }, function(errorCode, errorMessage) {
-          console.error({errorCode, errorMessage});
-          window.MessengerExtensions.requestCloseBrowser(null, null);
-        }, 'user_profile');
-      }
-    }, function(errorCode, errorMessage) {
-      console.error({errorCode, errorMessage});
-      window.MessengerExtensions.requestCloseBrowser(null, null);
-    });
+    this.pullData(); // Initial data fetch
   }
 
+  /*
+   * Provide the main structure of the resulting HTML
+   * Delegates items out to specialized components
+   *
+   */
   render() {
-    const {
-      ownerId,
-      items,
-      users,
-      title,
-      resetting,
-      newItemText,
-      updating,
-      socketStatus,
-    } = this.state;
+    /**
+     * If waiting for data, just show the loading spinner
+     * and skip the rest of this function
+     */
+    if (!this.state.giftCategory) {
+      return <Loading />;
+    }
 
-    let page;
+    /* ----------  Setup Sections (anything dynamic or repeated) ---------- */
 
-    // Skip and show loading spinner if we don't have data yet
-    if (users.length > 0) {
-      /* ----------  Setup Sections (anything dynamic or repeated) ---------- */
+    const skinTypes = App.skinTypes.map((label, index) => {
+      const value = User.SKIN_TYPES[index];
+      const checked = this.state.skinTypes.has(value);
 
-      const {apiUri, listId, viewerId, threadType} = this.props;
-      const itemList = items.filter(Boolean).map((item) => {
+      return (
+        <SkinType
+          key={value}
+          value={value}
+          label={label}
+          checked={checked}
+          addSkinType={this.addSkinType.bind(this)}
+          removeSkinType={this.removeSkinType.bind(this)}
+        />
+      );
+    });
+
+    const giftCategories =
+      App.giftCategories.map(({title, subtitle, image}, index) => {
+        const value = Gift.CATEGORIES[index];
+
         return (
-          <Item
-            {...item}
-            key={item.id}
-            users={users}
-            viewerId={viewerId}
-            pushUpdatedItem={this.pushUpdatedItem}
+          <GiftCategory
+            key={value}
+            title={title}
+            subtitle={subtitle}
+            image={image}
+            selected={value === this.state.giftCategory}
+            setGiftCategory={() => this.setGiftCategory(value)}
           />
         );
       });
 
-      let invite;
-      const isOwner = viewerId === ownerId;
-      if (isOwner || threadType !== 'USER_TO_PAGE') {
-        // only owners are able to share their lists and other
-        // participants are able to post back to groups.
-        let sharingMode;
-        let buttonText;
+    const arrivalPeriods = App.arrivalPeriods.map((label, index) => {
+      const value = User.ARRIVAL_PERIODS[index];
+      return (
+        <ArrivalPeriod
+          key={label}
+          label={label}
+          value={value}
+          selected={value === this.state.arrivalPeriod}
+          setArrivalPeriod={this.setArrivalPeriod.bind(this)}
+        />
+      );
+    });
 
-        if (threadType === 'USER_TO_PAGE') {
-          sharingMode = 'broadcast';
-          buttonText = 'Invite your friends to this list';
-        } else {
-          sharingMode = 'current_thread';
-          buttonText = 'Send to conversation';
-        }
+    const environments = User.ENVIRONMENTS.map((label) => {
+      return (
+        <Environment
+          key={label}
+          label={label}
+          active={label === this.state.environment}
+        />
+      );
+    });
 
-        invite = (
-          <Invite
-            title={title}
-            apiUri={apiUri}
-            listId={listId}
-            sharingMode={sharingMode}
-            buttonText={buttonText}
-          />
-        );
-      }
+    const {persist} = this.state;
+    const persistSwitch = (
+      <Switch
+        defaultChecked={persist}
+        onClick={() => this.setPersist(!persist)}
+      />
+    );
 
-      let titleField;
-      if (isOwner) {
-        titleField = (
-          <Title
-            text={title}
-            setTitleText={this.setTitleText}
-          />
-        );
-      }
-
-    /* ----------  Inner Structure  ---------- */
-      page =
-        (<section id='list'>
-          <Viewers
-            users={users}
-            viewerId={viewerId}
-          />
-
-          <Panel>
-            {titleField}
-
-            <section id='items'>
-              <Form checkbox>
-                <ReactCSSTransitionGroup
-                  transitionName='item'
-                  transitionEnterTimeout={250}
-                  transitionLeaveTimeout={250}
-                >
-                  {itemList}
-                </ReactCSSTransitionGroup>
-              </Form>
-
-              <NewItem
-                newItemText={newItemText}
-                disabled={updating}
-                resetting={resetting}
-                addNewItem={this.addNewItem}
-                setNewItemText={this.setNewItemText}
-              />
-            </section>
-          </Panel>
-
-          <Updating updating={updating} />
-
-          {invite}
-        </section>);
-    } else if (socketStatus === 'noList') {
-      // We were unable to find a matching list in our system.
-      page = <ListNotFound/>;
-    } else {
-      // Show a loading screen until app is ready
-      page = <LoadingScreen key='load' />;
-    }
-
-    /* ----------  Animated Wrapper  ---------- */
+    /* ----------  Main Structure  ---------- */
 
     return (
-      <div id='app'>
-        <ReactCSSTransitionGroup
-          transitionName='page'
-          transitionEnterTimeout={500}
-          transitionLeaveTimeout={500}
-        >
-          {page}
-        </ReactCSSTransitionGroup>
+      <div className='app'>
+        <section>
+          <CellsTitle>Date of Birth</CellsTitle>
+          <Form>
+            <FormCell select id='date-of-birth'>
+              <CellHeader id='display-date'>
+                {dateString(this.state.dateOfBirth, true)}
+              </CellHeader>
+
+              <CellBody>
+                <input
+                  id='datepicker'
+                  type='date'
+                  required='required'
+                  value={this.state.dateOfBirth}
+                  onChange={(event) => this.setDateOfBirth(event.target.value)}
+                />
+              </CellBody>
+            </FormCell>
+          </Form>
+        </section>
+
+        <section>
+          <CellsTitle>Preferred Gift Type</CellsTitle>
+          <Form radio id='gift-type'>{giftCategories}</Form>
+        </section>
+
+        <section>
+          <CellsTitle>What is your current environment like?</CellsTitle>
+          <div id='env-slider'>
+            <Slider
+              min={0}
+              max={2}
+              step={1}
+              defaultValue={ENVIRONMENTS.indexOf(this.state.environment)}
+              showValue={false}
+              onChange={this.setEnvironment.bind(this)}
+            />
+            {environments}
+          </div>
+        </section>
+
+        <section>
+          <CellsTitle>What are your top skin concerns?</CellsTitle>
+          <Form checkbox>{skinTypes}</Form>
+        </section>
+
+        <section id='arrival-periods'>
+          <CellsTitle>New Arrivals</CellsTitle>
+          <Form radio id='arrivalPeriod'>{arrivalPeriods}</Form>
+        </section>
+
+        <section>
+          <Form>
+            <FormCell switch>
+              <CellBody>Save this info for next time</CellBody>
+              <CellFooter>{persistSwitch}</CellFooter>
+            </FormCell>
+          </Form>
+        </section>
+        <ButtonArea className='see-options'>
+          <Button onClick={() => this.pushData()}>See Gift Options</Button>
+        </ButtonArea>
       </div>
     );
   }
