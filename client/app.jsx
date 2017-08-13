@@ -50,7 +50,7 @@ export default class App extends React.Component {
     super(props);
 
     this.state = {
-      ownerName: 'test'
+      name: 'test'
     };
   }
 
@@ -58,7 +58,7 @@ export default class App extends React.Component {
   componentWillMount() {
     if (this.props.userId !== 'demo') {
       userApi.getDetails(this.props.userId.psid ,(err, {statusCode}, body) => {
-        this.setState({ownerName: body.first_name + body.last_name});
+        this.setState({name: body.first_name + body.last_name});
       });
     }
 
@@ -84,13 +84,13 @@ export default class App extends React.Component {
     return (
       <div className='app'>
         <section>
-          <p>haj</p>
+          <p>Hi {this.state.name}</p>
           <h1>{JSON.stringify(this.props.userId)}</h1>
           <CellsTitle>Date of Birth</CellsTitle>
           <Form>
             <FormCell select id='date-of-birth'>
               <CellHeader id='display-date'>
-                {this.props.name}
+                {this.state.name}
               </CellHeader>
 
               <CellBody>
