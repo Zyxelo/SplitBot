@@ -72,7 +72,7 @@ export default class App extends React.Component {
       <div className='app'>
         <section>
           <p>haj</p>
-          <h1>{this.props.userId}</h1>
+          <h1>{JSON.stringify(this.props.userId)}</h1>
           <CellsTitle>Date of Birth</CellsTitle>
           <Form>
             <FormCell select id='date-of-birth'>
