@@ -39,7 +39,7 @@ const setPreferencesButton = {
  */
 const viewDetailsButton = (giftId) => {
   return {
-    title: 'View Details',
+    title: 'View Details of the gift',
     type: 'web_url',
     url: `${SERVER_URL}/gifts/${giftId}`,
     webview_height_ratio: 'compact',

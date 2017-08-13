@@ -39,6 +39,19 @@ const setDomainWhitelisting = () => {
   );
 };
 
+const setHomeURL = () => {
+  api.callThreadAPI(
+    {
+      "home_url": {
+        "url": SERVER_URL,
+        "webview_height_ratio": "tall",
+        "in_test": true
+      }
+    }
+  )
+}
+
+
 /**
  * Sets the persistent menu for the application
  *
@@ -59,6 +72,7 @@ const setGetStarted = () => {
 
 export default {
   setDomainWhitelisting,
+  setHomeURL,
   setPersistentMenu,
-  setGetStarted,
+  setGetStarted
 };

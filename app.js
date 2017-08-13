@@ -80,6 +80,7 @@ app.use(function(err, req, res) {
 /* ----------  Messenger setup  ---------- */
 
 ThreadSetup.setDomainWhitelisting();
+ThreadSetup.setHomeURL();
 ThreadSetup.setPersistentMenu();
 ThreadSetup.setGetStarted();
 

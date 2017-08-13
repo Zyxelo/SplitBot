@@ -21,7 +21,7 @@ import Gift from './gift.jsx';
 /* ----------  Styles  ---------- */
 
 import 'weui';
-import 'react-weui/lib/react-weui.min.css';
+//import 'react-weui/lib/react-weui.min.css';
 import '../public/style.css';
 
 // Simple initializer for attaching the Preferences App to the DOM
@@ -31,9 +31,7 @@ window.attachApp = (userId, gift) => {
    * so show an error page if MessengerExtensions was unable to start
    */
   if (userId) {
-    const app = gift
-      ? <Gift {...gift} userId={userId} />
-      : <App userId={userId} />;
+    const app = <App userId={userId} />;
     ReactDOM.render(app, document.getElementById('content'));
   } else {
     ReactDOM.render(<Oops />, document.getElementById('content'));
