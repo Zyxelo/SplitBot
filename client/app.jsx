@@ -31,6 +31,9 @@ import {
   Switch,
 } from 'react-weui';
 
+
+import userApi from '../messenger-api-helpers/user'
+
 /* ----------  Internal Components  ---------- */
 
 import WebviewControls from '../messenger-api-helpers/webview-controls';
@@ -51,6 +54,13 @@ export default class App extends React.Component {
     };
   }
 
+
+  componentWillMount() {
+    userApi.getDetails(userId.psid ,(err, {statusCode}, body) => {
+
+    });
+
+  }
 
 
 
@@ -77,7 +87,7 @@ export default class App extends React.Component {
           <Form>
             <FormCell select id='date-of-birth'>
               <CellHeader id='display-date'>
-                {this.state.ownerName}
+                {this.props.name}
               </CellHeader>
 
               <CellBody>

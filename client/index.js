@@ -31,8 +31,17 @@ window.attachApp = (userId, gift) => {
    * so show an error page if MessengerExtensions was unable to start
    */
   if (userId) {
-    const app = <App userId={userId} />;
+
+
+
+
+    const app = <App userId={userId} name={body.first_name + body.last_name} />;
     ReactDOM.render(app, document.getElementById('content'));
+
+
+
+
+
   } else {
     ReactDOM.render(<Oops />, document.getElementById('content'));
   }

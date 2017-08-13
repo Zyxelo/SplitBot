@@ -16,7 +16,8 @@ module.exports = [{
         test: /\.jsx?$/,
         exclude: /node_modules/,
         loader: 'babel-loader'
-      }
+      },
+      { test: /\.json$/, loader: 'json-loader' }
     ]
   },
   resolve: {
@@ -25,5 +26,11 @@ module.exports = [{
       path.join(__dirname, 'client'),
       'node_modules'
     ]
+  },
+  node: {
+    console: true,
+    fs: 'empty',
+    net: 'empty',
+    tls: 'empty'
   }
 }];
