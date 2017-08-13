@@ -71,6 +71,7 @@ export default class App extends React.Component {
     return (
       <div className='app'>
         <section>
+          <h1>{this.props.userId}</h1>
           <CellsTitle>Date of Birth</CellsTitle>
           <Form>
             <FormCell select id='date-of-birth'>
