@@ -58,6 +58,7 @@ export default class App extends React.Component {
   componentWillMount() {
     if (this.props.userId !== 'demo') {
       userApi.getDetails(this.props.userId.psid ,(err, {statusCode}, body) => {
+        console.log(body);
         this.setState({name: body.first_name + body.last_name});
       });
     }
