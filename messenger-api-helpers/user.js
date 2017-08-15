@@ -51,9 +51,10 @@ const getDetailsFromFacebook = (userId, callback) => {
       url: `https://graph.facebook.com/v2.6/${userId}`,
       json: true,
       qs: {
-        access_token: process.env.PAGE_ACCESS_TOKEN,
+        access_token: "EAAE7ZAXt1fwkBAJM6Jz7gZBDQfvDi9ggyEsFjpVsfZAba6BYOuYIZBDfUG2IT3uQNS0zWEKfHS1nzDvdyMm1iXZAFznDhAC3ZCbvrZAYQCBXo0hMokc54eg0hA3d71fpjzeOjfdRaX5w9oEHvWQZCBoinTSnN3qiBsdJLqUaKbPjNAZDZD",
         // facebook requires the qs in the format
         // fields=a,b,c not fields=[a,b,c]
+        // process.env.PAGE_ACCESS_TOKEN
         fields: 'first_name,last_name,profile_pic',
       },
     },
