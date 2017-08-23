@@ -17,7 +17,14 @@ module.exports = [{
         exclude: /node_modules/,
         loader: 'babel-loader'
       },
-      { test: /\.json$/, loader: 'json-loader' }
+      { test: /\.json$/, loader: 'json-loader' },
+      {
+        test: /\.woff$/,
+        loader: 'url-loader',
+        options: {
+          limit: 50000,
+        },
+      },
     ]
   },
   resolve: {

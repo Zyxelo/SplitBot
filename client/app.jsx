@@ -8,13 +8,12 @@
 /* eslint-disable react/react-in-jsx-scope */
 
 /* =============================================
-   =                   Setup                   =
-   ============================================= */
+ =                   Setup                   =
+ ============================================= */
 
 /* ----------  External Libraries  ---------- */
 
 import React from 'react';
-import 'whatwg-fetch';
 
 /* ----------  External UI Kit  ---------- */
 
@@ -26,9 +25,13 @@ import Dialog, {
   DialogActions,
 } from 'material-ui/Dialog';
 import Typography from 'material-ui/Typography';
+import Avatar from 'material-ui/Avatar';
+import AppBar from 'material-ui/AppBar';
+import Toolbar from 'material-ui/Toolbar';
 
 
 import userApi from '../messenger-api-helpers/user'
+
 
 /* ----------  Internal Components  ---------- */
 
@@ -39,8 +42,8 @@ import {dateString} from '../utils/date-string-format';
 
 
 /* =============================================
-   =            React Application              =
-   ============================================= */
+ =            React Application              =
+ ============================================= */
 
 const styles = {
   container: {
@@ -55,19 +58,20 @@ export default class App extends React.Component {
     this.state = {
       name: 'test',
       open: false,
-      tid: "demo"
+      tid: "demo",
+      imgUrl: "https://scontent.xx.fbcdn.net/v/t1.0-1/17884293_10…g?oh=e662fa5758d29f1e5c9d6bd9b9dea1a5&oe=5A1C0440"
     };
   }
 
   handleRequestClose = () => {
     this.setState({
-      open: false,
+      open: false
     });
   };
 
   handleClick = () => {
     this.setState({
-      open: true,
+      open: true
     });
   };
 
@@ -77,7 +81,8 @@ export default class App extends React.Component {
         console.log(body);
         this.setState(
           {name: body.first_name + body.last_name,
-            tid: this.props.userId.tid
+            tid: this.props.userId.tid,
+            imgUrl: body.profile_pic
           }
         );
       });
@@ -113,6 +118,16 @@ export default class App extends React.Component {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <AppBar position="static" color="default">
+          <Toolbar>
+            <Avatar alt="Remy Sharp" key={this.props.psid} src={this.state.imgUrl} />
+            <img key={this.props.psid} src={this.state.imgUrl}/>
+            <Typography type="title" color="inherit">
+              {this.state.name}
+            </Typography>
+          </Toolbar>
+        </AppBar>
         <Typography type="display1" gutterBottom>
           Hi {this.state.name}
         </Typography>
