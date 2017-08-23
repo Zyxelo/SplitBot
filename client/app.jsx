@@ -17,17 +17,15 @@ import React from 'react';
 
 /* ----------  External UI Kit  ---------- */
 
-import Button from 'material-ui/Button';
-import Dialog, {
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from 'material-ui/Dialog';
 import Typography from 'material-ui/Typography';
 import Avatar from 'material-ui/Avatar';
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
+import Table, { TableBody, TableCell, TableHead, TableRow } from 'material-ui/Table';
+import Paper from 'material-ui/Paper';
+import Tabs, { Tab } from 'material-ui/Tabs';
+
+
 
 
 import userApi from '../messenger-api-helpers/user'
@@ -48,32 +46,46 @@ import {dateString} from '../utils/date-string-format';
 const styles = {
   container: {
     textAlign: 'center',
-    paddingTop: 200,
+    paddingTop: 0,
+  },
+  paper: {
+    width: '100%',
+    overflowX: 'auto',
   },
 };
+
+
+
+let id = 0;
+function createData(name, amount, people) {
+  id += 1;
+  return { id, name, amount, people};
+}
+
+const data = [
+  createData('Victor', 159, 'All'),
+  createData('Leslie', 237, 'All'),
+  createData('Frederika', 400,'All'),
+  createData('Annika', 305, 'Victor, Frederika'),
+  createData('Carl', 356, 'All'),
+];
+
+
+
+
+
 
 export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       name: 'test',
-      open: false,
       tid: "demo",
-      imgUrl: "https://scontent.xx.fbcdn.net/v/t1.0-1/17884293_10…g?oh=e662fa5758d29f1e5c9d6bd9b9dea1a5&oe=5A1C0440"
+      imgUrl: "https://www.w3schools.com/w3css/img_avatar3.png",
+      value: 0
     };
   }
 
-  handleRequestClose = () => {
-    this.setState({
-      open: false
-    });
-  };
-
-  handleClick = () => {
-    this.setState({
-      open: true
-    });
-  };
 
   componentWillMount() {
     if (this.props.userId !== 'demo') {
@@ -88,6 +100,10 @@ export default class App extends React.Component {
       });
     }
   }
+
+  handleChange = (event, value) => {
+    this.setState({ value });
+  };
 
 
 
@@ -107,36 +123,73 @@ export default class App extends React.Component {
 
     return (
       <div className='app' style={styles.container}>
-        <Dialog open={this.state.open} onRequestClose={this.handleRequestClose}>
-          <DialogTitle>{this.state.tid}</DialogTitle>
-          <DialogContent>
-            <DialogContentText>1-2-3-4-5</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button color="primary" onClick={this.handleRequestClose}>
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
 
-        <AppBar position="static" color="default">
-          <Toolbar>
+        <AppBar position="static" color="primary" >
+          <Toolbar space-between>
             <Avatar alt="Remy Sharp" key={this.props.psid} src={this.state.imgUrl} />
-            <img key={this.props.psid} src={this.state.imgUrl}/>
             <Typography type="title" color="inherit">
               {this.state.name}
             </Typography>
           </Toolbar>
         </AppBar>
-        <Typography type="display1" gutterBottom>
-          Hi {this.state.name}
-        </Typography>
-        <Typography type="subheading" gutterBottom>
-          example subheading
-        </Typography>
-        <Button raised color="accent" onClick={this.handleClick}>
-          Whats my tid
-        </Button>
+        <Paper>
+          <Typography type="display1" gutterBottom>
+            GroupName
+          </Typography>
+          <Typography type="subheading"  gutterBottom>
+            Group Subheading
+          </Typography>
+        </Paper>
+
+
+        <AppBar position="static" color="default">
+          <Tabs
+            value={this.state.value}
+            onChange={this.handleChange}
+            indicatorColor="primary"
+            textColor="primary"
+            fullWidth
+            centered
+          >
+            <Tab label="General Info" />
+            <Tab label="You owe" />
+            <Tab label="Misc" />
+          </Tabs>
+        </AppBar>
+
+
+
+        <Paper styles={styles.paper}>
+          <Typography type="subheading" gutterBottom>
+            Recent IOU's
+          </Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Payer</TableCell>
+                <TableCell numeric>Amount</TableCell>
+                <TableCell>Involved</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map(n => {
+                return (
+                  <TableRow key={n.id}>
+                    <TableCell>
+                      {n.name}
+                    </TableCell>
+                    <TableCell numeric>
+                      {n.amount}
+                    </TableCell>
+                    <TableCell numeric>
+                      {n.people}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Paper>
       </div>
     );
   }
